@@ -1,0 +1,13 @@
+feature,importance
+log_attack_flow_count,0.010767011
+mean_RST Flag Cnt,0.002198415
+mean_SYN Flag Cnt,0.00079201313
+mean_Pkt Len Mean,0.00066659757
+mean_ACK Flag Cnt,0.0004928558
+mean_Idle Mean,0.00041552336
+mean_Flow Pkts/s,0.0003510846
+mean_FIN Flag Cnt,0.0003436474
+mean_PSH Flag Cnt,0.00033001785
+protocol_diversity,0.00029064922
+mean_Active Mean,0.00027128297
+log_flow_count,0.00026107338
