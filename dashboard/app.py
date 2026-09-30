@@ -26,7 +26,7 @@ from dashboard.views import (
 
 # Configure Streamlit page
 st.set_page_config(
-    page_title="NeuralOps — Threat Forecasting & System Management Console",
+    page_title="Neural StealthOps — Threat Forecasting & System Management Console",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -212,7 +212,7 @@ def render_top_navigation():
         st.markdown(
             """
             <div style="display: flex; align-items: center; gap: 10px; height: 100%; padding-top: 4px;">
-                <span style="font-weight: 800; font-size: 1.15rem; color: #0f172a; letter-spacing: -0.3px;">🛡️ Team NeuralOps</span>
+                <span style="font-weight: 800; font-size: 1.15rem; color: #0f172a; letter-spacing: -0.3px;">🛡️ Team Neural StealthOps</span>
                 <span style="background: #e2e8f0; color: #475569; font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; font-weight: 700;">SIH-26153</span>
                 <span style="color: #64748b; font-size: 0.82rem; font-weight: 600;">DIAT Pune</span>
             </div>

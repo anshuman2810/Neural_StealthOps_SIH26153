@@ -1,5 +1,5 @@
 """
-NeuralOps SIH-26153 Dashboard Views Module
+Neural StealthOps SIH-26153 Dashboard Views Module
 Provides page views for:
 - Landing Page (DIAT welcome & dashboard selector)
 - Infiltration Prediction Engine (Predictive World Model SOC Console)

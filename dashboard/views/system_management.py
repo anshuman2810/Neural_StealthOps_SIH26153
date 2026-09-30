@@ -181,7 +181,7 @@ Host: {node['ip']}:{node['port']}
 Time: {time.strftime('%Y-%m-%d %H:%M:%S UTC')}
 
 {'{'}
-  "catalog_name": "neuralops_telemetry_lake",
+  "catalog_name": "neural_stealthops_telemetry_lake",
   "storage_backend": "ceph-rgw-s3",
   "endpoint": "http://{node['ip']}:{node['port']}/v1",
   "tables": [
@@ -242,7 +242,7 @@ db0:keys=4290120,expires=4290120,avg_ttl=60000 (10s window discrete state queue)
             )
         else:  # threat_engine
             st.code(
-                f"""[NeuralOps AI Threat Detection Engine Runtime]
+                f"""[Neural StealthOps AI Threat Detection Engine Runtime]
 Host: {node['ip']}:{node['port']}
 Inference Engine: PyTorch AttentionWorldModel (Multi-Task)
 Service Status: {node['status']}

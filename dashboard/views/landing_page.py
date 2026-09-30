@@ -146,7 +146,7 @@ def render_landing_page():
         st.markdown(
             """
             <div class="landing-header-badge">Smart India Hackathon 2026</div>
-            <div class="welcome-title">Welcome to team NeuralOps</div>
+            <div class="welcome-title">Welcome to team Neural StealthOps</div>
             <div class="welcome-sub">SIH-26153: AI based Network Attack Forecasting from Network Traffic Data</div>
             <div class="welcome-inst">
                 <span>🏛️</span> Defence Institute of Advanced Technology (DIAT)
@@ -164,6 +164,19 @@ def render_landing_page():
             """
             <div style="margin-top: 20px; padding: 14px; background: #f1f5f9; border-radius: 8px; border-left: 4px solid #2563eb; font-size: 0.85rem; color: #334155;">
                 <strong>System Overview:</strong> Proactive intrusion detection powered by temporal AI World Models. Real-time discrete 10-second telemetry state encoding, multi-step kill-chain hazard anticipation (+10s, +30s, +60s), and continuous infrastructure telemetry.
+            </div>
+            <div style="margin-top: 14px; padding: 12px 14px; background: #ffffff; border-radius: 8px; border: 1.5px solid #cbd5e1;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                    Team Members &bull; Defence Institute of Advanced Technology (DIAT)
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <span style="background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Priyanshu Namdeo</span>
+                    <span style="background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Maj. Tej Narayan Kunwar</span>
+                    <span style="background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Anshuman Prajapati</span>
+                    <span style="background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Apurva Pradip Surve</span>
+                    <span style="background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Priyanshu Vishwakarma</span>
+                    <span style="background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Vikram Sudhakar Madavi</span>
+                </div>
             </div>
             """,
             unsafe_allow_html=True
