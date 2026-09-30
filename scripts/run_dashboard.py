@@ -34,7 +34,7 @@ def main():
         "run",
         str(app_path),
         "--server.headless", "false",
-        "--theme.base", "dark"
+        "--theme.base", "light"
     ]
     subprocess.run(cmd, env=env)
 

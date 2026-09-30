@@ -1,11 +1,67 @@
-artifacts
-dataset
-demo_data
-GNN
-network_attack_forecasting.ipynb
-predictive_world_model_all_tables.docx
-predictive_world_model_tables.docx
-SIH26 - Neural StealthOps.pptx
-SIH26_Presentation_Script_and_Defense_Manual.docx
-**/__pycache__
+# ==============================================================================
+# Git Ignore Configuration - Predictive Network World Model
+# ==============================================================================
 
+# Raw Large Datasets (CIC-IDS2018 multi-gigabyte CSV flow records)
+dataset/
+*.csv.gz
+*.pcap
+*.pcapng
+
+# Presentation Documents and Defense Manuals
+*.docx
+*.pptx
+*.pdf
+
+# Legacy Prototypes & Alternative Models (GNN, Discrete Clustering, v1 Notebooks)
+GNN/
+discrete_world_model/
+network_attack_forecasting.ipynb
+artifacts/
+
+# Python Bytecode, Caches & Builds
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv/
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# IDE, Editor & OS Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & Temporary Files
+*.log
+*.tmp
+temp/
+scratch/

@@ -43,9 +43,11 @@ class AutoregressiveRolloutSimulator:
                 input_tensor = torch.tensor(hist[None], dtype=torch.float32, device=device)
                 state_pred, risk_logits, intensity_pred, stage_logits, _ = model(input_tensor)
 
+                step_stage_probs = torch.softmax(stage_logits, dim=-1)[0].cpu().numpy()
                 step_risk = float(torch.sigmoid(risk_logits[0, 0]).cpu().numpy())
                 step_stage_idx = int(stage_logits.argmax(dim=-1)[0].cpu().numpy())
                 step_stage = self.stages[step_stage_idx]
+                step_confidence = float(step_stage_probs[step_stage_idx])
                 step_intensity = float(np.clip(intensity_pred[0, 0].cpu().numpy(), 0.0, 1.0))
                 next_scaled_state = state_pred[0].cpu().numpy()
 
@@ -58,8 +60,12 @@ class AutoregressiveRolloutSimulator:
                     'predicted_risk': step_risk,
                     'risk_pct': step_risk * 100.0,
                     'predicted_stage': step_stage,
-                    'predicted_intensity': step_intensity
+                    'stage_confidence_pct': step_confidence * 100.0,
+                    'predicted_intensity': step_intensity,
+                    'stage_probabilities': {stage: float(p) for stage, p in zip(self.stages, step_stage_probs)}
                 }
+                for stage, p in zip(self.stages, step_stage_probs):
+                    row_dict[f'prob_{stage}'] = float(p) * 100.0
 
                 # Add sample telemetry projections if available
                 feature_names = self.predictor.features

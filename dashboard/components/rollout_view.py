@@ -8,8 +8,13 @@ except ImportError:
     HAS_PLOTLY = False
 
 def render_rollout_view(rollout_df: pd.DataFrame):
-    """Renders the 60-second forward simulation rollout trajectory."""
-    st.markdown("### 🔮 60-Second Autoregressive World Model Rollout Simulation")
+    """
+    Renders the 60-second forward simulation rollout trajectory:
+    1. Time-Series Infiltration Probability Score curve (+10s to +60s)
+    2. Projected Model States and Confidence Distribution across future horizons
+    """
+    st.markdown("### 60-Second Autoregressive World Model Rollout Simulation")
+    st.caption(r"State-Transition Dynamics $P(S_{t+1} \mid S_t)$: Recursively propagates predicted states forward to forecast infiltration probability and kill-chain escalation before compromise completes.")
 
     if rollout_df.empty:
         st.info("No rollout simulation data available.")
@@ -27,14 +32,14 @@ def render_rollout_view(rollout_df: pd.DataFrame):
                     x=rollout_df['seconds_ahead'],
                     y=rollout_df['risk_pct'],
                     mode='lines+markers+text',
-                    name='Projected Threat Risk',
-                    line=dict(color='#ef4444', width=3),
+                    name='Infiltration Probability',
+                    line=dict(color='#dc2626', width=2.5),
                     fill='tozeroy',
-                    fillcolor='rgba(239, 68, 68, 0.15)',
-                    marker=dict(size=8, color='#f87171'),
+                    fillcolor='rgba(220, 38, 38, 0.08)',
+                    marker=dict(size=7, color='#dc2626'),
                     text=[f"{s}" for s in rollout_df['predicted_stage']],
                     textposition='top center',
-                    textfont=dict(color='#cbd5e1', size=11)
+                    textfont=dict(color='#1e293b', size=10)
                 )
             )
 
@@ -42,32 +47,32 @@ def render_rollout_view(rollout_df: pd.DataFrame):
             fig.add_hline(
                 y=50.0,
                 line_dash="dash",
-                line_color="#f59e0b",
+                line_color="#d97706",
                 annotation_text="Critical Action Threshold (50%)",
                 annotation_position="bottom right",
-                annotation_font_color="#f59e0b"
+                annotation_font_color="#d97706"
             )
 
             fig.update_layout(
-                title="<b>Projected Attack Risk & Stage Evolution (+10s to +60s)</b>",
-                title_font=dict(color="#f8fafc", size=14),
-                paper_bgcolor="#1e293b",
-                plot_bgcolor="#0f172a",
+                title="<b>World Model Time-Series Infiltration Probability & State Progression (+10s to +60s)</b>",
+                title_font=dict(color="#0f172a", size=13),
+                paper_bgcolor="#ffffff",
+                plot_bgcolor="#f8fafc",
                 margin=dict(l=40, r=40, t=50, b=40),
                 xaxis=dict(
-                    title=dict(text="Simulation Horizon (Seconds Ahead)", font=dict(color="#cbd5e1")),
+                    title=dict(text="Forward Simulation Horizon (Seconds Ahead)", font=dict(color="#475569")),
                     tickvals=[10, 20, 30, 40, 50, 60],
                     ticktext=["+10s", "+20s", "+30s", "+40s", "+50s", "+60s"],
-                    tickfont=dict(color="#94a3b8"),
+                    tickfont=dict(color="#475569"),
                     showgrid=True,
-                    gridcolor="#334155"
+                    gridcolor="#e2e8f0"
                 ),
                 yaxis=dict(
-                    title=dict(text="Risk Probability (%)", font=dict(color="#cbd5e1")),
+                    title=dict(text="Infiltration Probability (%)", font=dict(color="#475569")),
                     range=[0, 105],
-                    tickfont=dict(color="#94a3b8"),
+                    tickfont=dict(color="#475569"),
                     showgrid=True,
-                    gridcolor="#334155"
+                    gridcolor="#e2e8f0"
                 ),
                 height=320
             )
@@ -78,27 +83,48 @@ def render_rollout_view(rollout_df: pd.DataFrame):
     with col2:
         st.markdown(
             """
-            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 14px; height: 320px; overflow-y: auto;">
-                <div style="color: #38bdf8; font-weight: 700; font-size: 0.9rem; margin-bottom: 10px;">
-                    Forward Simulation Summary
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div style="color: #0f172a; font-weight: 700; font-size: 0.92rem;">
+                    World Model Future Simulation Summary
                 </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        display_df = rollout_df[['seconds_ahead', 'risk_pct', 'predicted_stage']].copy()
-        display_df.columns = ['Horizon', 'Forecasted Risk', 'Stage']
-        display_df['Horizon'] = display_df['Horizon'].apply(lambda s: f"+{s}s")
-        display_df['Forecasted Risk'] = display_df['Forecasted Risk'].apply(lambda r: f"{r:.1f}%")
-
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
-
-        st.markdown(
-            """
-            <p style="color: #94a3b8; font-size: 0.75rem; margin-top: 8px;">
-                💡 <b>World Model Advantage:</b> Rather than repeatedly reporting static classifications, the network state transitions are autoregressively propagated through the learned latent space.
-            </p>
+                <div style="color: #64748b; font-size: 0.72rem; font-weight: 600;">
+                    +10s to +60s Horizon
+                </div>
             </div>
             """,
             unsafe_allow_html=True
         )
+
+        display_df = pd.DataFrame({
+            'Horizon': [f"+{int(row['seconds_ahead'])}s" for _, row in rollout_df.iterrows()],
+            'Infiltration Prob': [round(float(row['risk_pct']), 1) for _, row in rollout_df.iterrows()],
+            'Model State': [str(row['predicted_stage']) for _, row in rollout_df.iterrows()],
+            'State Prob': [round(float(row.get('stage_confidence_pct', 0.0)), 1) for _, row in rollout_df.iterrows()]
+        })
+
+        st.dataframe(
+            display_df,
+            column_config={
+                'Horizon': st.column_config.TextColumn('Horizon', width='small'),
+                'Infiltration Prob': st.column_config.ProgressColumn(
+                    'Infiltration Prob',
+                    format='%.1f%%',
+                    min_value=0.0,
+                    max_value=100.0,
+                    width='medium'
+                ),
+                'Model State': st.column_config.TextColumn('Model State', width='medium'),
+                'State Prob': st.column_config.ProgressColumn(
+                    'State Prob',
+                    format='%.1f%%',
+                    min_value=0.0,
+                    max_value=100.0,
+                    width='small'
+                )
+            },
+            use_container_width=True,
+            hide_index=True,
+            height=280
+        )
+
+        st.caption("World Model Latent Trajectory: Rather than repeatedly reporting static classifications, the network state transitions are autoregressively propagated through the learned latent space to simulate future attacker progression.")

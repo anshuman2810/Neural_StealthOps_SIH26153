@@ -10,8 +10,8 @@ except ImportError:
     HAS_PLOTLY = False
 
 def render_telemetry_charts(history_df: pd.DataFrame):
-    """Renders real-time telemetry time-series charts for the active sequence window."""
-    st.markdown("### 📊 Real-Time Network Telemetry Stream (Past 2 Minutes)")
+    """Renders real-time telemetry time-series charts for the active sequence window in light theme."""
+    st.markdown("### Real-Time Network Telemetry Stream (Past 2 Minutes)")
 
     if history_df.empty:
         st.info("Awaiting telemetry data...")
@@ -35,7 +35,7 @@ def render_telemetry_charts(history_df: pd.DataFrame):
                     x=df_plot['time_label'],
                     y=df_plot['flow_count'],
                     name="Flows / 10s",
-                    line=dict(color="#38bdf8", width=2.5),
+                    line=dict(color="#2563eb", width=2.5),
                     mode="lines+markers"
                 ),
                 secondary_y=False
@@ -45,21 +45,21 @@ def render_telemetry_charts(history_df: pd.DataFrame):
                     x=df_plot['time_label'],
                     y=df_plot['total_packets'],
                     name="Total Packets",
-                    line=dict(color="#818cf8", width=2, dash="dot"),
+                    line=dict(color="#4f46e5", width=2, dash="dot"),
                     mode="lines"
                 ),
                 secondary_y=True
             )
             fig1.update_layout(
                 title="<b>Traffic Volume Velocity</b>",
-                title_font=dict(color="#f8fafc", size=14),
-                paper_bgcolor="#1e293b",
-                plot_bgcolor="#0f172a",
+                title_font=dict(color="#0f172a", size=13),
+                paper_bgcolor="#ffffff",
+                plot_bgcolor="#f8fafc",
                 margin=dict(l=40, r=40, t=40, b=30),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color="#cbd5e1")),
-                xaxis=dict(showgrid=True, gridcolor="#334155", tickfont=dict(color="#94a3b8")),
-                yaxis=dict(title=dict(text="Flow Count", font=dict(color="#38bdf8")), tickfont=dict(color="#94a3b8"), showgrid=True, gridcolor="#334155"),
-                yaxis2=dict(title=dict(text="Packet Volume", font=dict(color="#818cf8")), tickfont=dict(color="#94a3b8"), showgrid=False),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color="#334155")),
+                xaxis=dict(showgrid=True, gridcolor="#e2e8f0", tickfont=dict(color="#475569")),
+                yaxis=dict(title=dict(text="Flow Count", font=dict(color="#2563eb")), tickfont=dict(color="#475569"), showgrid=True, gridcolor="#e2e8f0"),
+                yaxis2=dict(title=dict(text="Packet Volume", font=dict(color="#4f46e5")), tickfont=dict(color="#475569"), showgrid=False),
                 height=300
             )
             st.plotly_chart(fig1, use_container_width=True)
@@ -68,9 +68,9 @@ def render_telemetry_charts(history_df: pd.DataFrame):
         with col2:
             fig2 = make_subplots(specs=[[{"secondary_y": True}]])
             flag_cols = [
-                ('mean_SYN Flag Cnt', 'SYN Flag Rate', '#f59e0b'),
-                ('mean_RST Flag Cnt', 'RST Flag Rate', '#ef4444'),
-                ('mean_ACK Flag Cnt', 'ACK Flag Rate', '#10b981')
+                ('mean_SYN Flag Cnt', 'SYN Flag Rate', '#d97706'),
+                ('mean_RST Flag Cnt', 'RST Flag Rate', '#dc2626'),
+                ('mean_ACK Flag Cnt', 'ACK Flag Rate', '#059669')
             ]
             for col_name, label, color in flag_cols:
                 if col_name in df_plot.columns:
@@ -91,7 +91,7 @@ def render_telemetry_charts(history_df: pd.DataFrame):
                         x=df_plot['time_label'],
                         y=df_plot['port_entropy'],
                         name="Port Entropy",
-                        line=dict(color="#c084fc", width=2.5, dash="dash"),
+                        line=dict(color="#7c3aed", width=2.5, dash="dash"),
                         mode="lines"
                     ),
                     secondary_y=True
@@ -99,24 +99,17 @@ def render_telemetry_charts(history_df: pd.DataFrame):
 
             fig2.update_layout(
                 title="<b>TCP Control Flags & Port Entropy</b>",
-                title_font=dict(color="#f8fafc", size=14),
-                paper_bgcolor="#1e293b",
-                plot_bgcolor="#0f172a",
+                title_font=dict(color="#0f172a", size=13),
+                paper_bgcolor="#ffffff",
+                plot_bgcolor="#f8fafc",
                 margin=dict(l=40, r=40, t=40, b=30),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color="#cbd5e1")),
-                xaxis=dict(showgrid=True, gridcolor="#334155", tickfont=dict(color="#94a3b8")),
-                yaxis=dict(title=dict(text="Mean Flag Rate", font=dict(color="#f59e0b")), tickfont=dict(color="#94a3b8"), showgrid=True, gridcolor="#334155"),
-                yaxis2=dict(title=dict(text="Port Entropy (bits)", font=dict(color="#c084fc")), tickfont=dict(color="#94a3b8"), showgrid=False),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color="#334155")),
+                xaxis=dict(showgrid=True, gridcolor="#e2e8f0", tickfont=dict(color="#475569")),
+                yaxis=dict(title=dict(text="Mean Flag Rate", font=dict(color="#d97706")), tickfont=dict(color="#475569"), showgrid=True, gridcolor="#e2e8f0"),
+                yaxis2=dict(title=dict(text="Port Entropy (bits)", font=dict(color="#7c3aed")), tickfont=dict(color="#475569"), showgrid=False),
                 height=300
             )
             st.plotly_chart(fig2, use_container_width=True)
 
     else:
-        # Fallback to standard Streamlit native charts
-        with col1:
-            st.caption("Traffic Volume (Flows)")
-            st.line_chart(df_plot.set_index('time_label')[['flow_count', 'total_packets']])
-        with col2:
-            st.caption("TCP Flags & Entropy")
-            flag_avail = [c for c in ['mean_SYN Flag Cnt', 'mean_RST Flag Cnt', 'port_entropy'] if c in df_plot.columns]
-            st.line_chart(df_plot.set_index('time_label')[flag_avail])
+        st.line_chart(df_plot.set_index('time_label')[['flow_count', 'total_packets']])

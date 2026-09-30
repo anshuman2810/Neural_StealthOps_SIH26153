@@ -5,6 +5,7 @@ from .charts import render_telemetry_charts
 from .rollout_view import render_rollout_view
 from .xai_panel import render_xai_panel
 from .alert_feed import render_alert_feed
+from .port_analysis import render_port_analysis
 
 __all__ = [
     "render_header",
@@ -13,5 +14,6 @@ __all__ = [
     "render_telemetry_charts",
     "render_rollout_view",
     "render_xai_panel",
-    "render_alert_feed"
+    "render_alert_feed",
+    "render_port_analysis"
 ]

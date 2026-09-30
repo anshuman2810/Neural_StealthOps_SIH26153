@@ -1,8 +1,26 @@
+# ==============================================================================
+# Dependencies for Predictive Network World Model & Streamlit Dashboard
+# ==============================================================================
+
+# Core Deep Learning & Tensor Operations
 torch>=2.0.0
+
+# Scientific Computing & Data Processing
 numpy>=1.24.0
+scipy>=1.10.0
 pandas>=2.0.0
 scikit-learn>=1.2.0
+
+# Visual Analytics & Plotting
 matplotlib>=3.7.0
 seaborn>=0.12.0
-streamlit>=1.30.0
 plotly>=5.18.0
+
+# SOC Interactive Console & Dashboard
+streamlit>=1.30.0
+
+# Model Explainability (SHAP Marginal Feature Attribution)
+shap>=0.44.0
+
+# Report & Table Documentation Generator
+python-docx>=1.0.0
