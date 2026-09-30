@@ -105,6 +105,45 @@ def load_ai_engine():
     port_engine = PortTelemetryEngine()
     return predictor, shap_explainer, attn_explainer, rollout_sim, port_engine
 
+@st.cache_data(show_spinner=False)
+def get_cached_scenario(scenario_name: str) -> pd.DataFrame:
+    """Loads and caches scenario telemetry in RAM to eliminate repeated disk I/O across sessions."""
+    loader = ScenarioLoader()
+    return loader.load_scenario(scenario_name)
+
+@st.cache_data(show_spinner=False, max_entries=2000)
+def compute_step_diagnostics(scenario_name: str, step_idx: int):
+    """
+    Computes and caches AI inference, SHAP feature attributions, self-attention,
+    60-second autoregressive rollout, and port transitions for a given scenario step.
+    Caches results across all concurrent user sessions for sub-millisecond instant response.
+    """
+    loader = ScenarioLoader()
+    df_scenario = get_cached_scenario(scenario_name)
+    predictor, shap_explainer, attn_explainer, rollout_sim, port_engine = load_ai_engine()
+
+    history_features, current_row, gt_future = loader.get_sliding_window(
+        df_scenario, step_idx, seq_len=SEQ_LEN
+    )
+    current_time_str = str(current_row.get('window', f'Step {step_idx}'))
+
+    # Run AI Inference
+    prediction = predictor.predict(history_features)
+    attribution_df = shap_explainer.explain(history_features, horizon_idx=1, top_k=8)
+    attention_df = attn_explainer.explain(prediction['attention_weights'])
+    rollout_df = rollout_sim.simulate(history_features, k_steps=6)
+    port_transition_data = port_engine.get_port_state_transitions(current_row.to_dict(), prediction, scenario_name)
+
+    return {
+        "prediction": prediction,
+        "attribution_df": attribution_df,
+        "attention_df": attention_df,
+        "rollout_df": rollout_df,
+        "port_transition_data": port_transition_data,
+        "current_row_dict": current_row.to_dict(),
+        "current_time_str": current_time_str
+    }
+
 def main():
     loader = ScenarioLoader()
     scenario_names = loader.get_scenario_names()
@@ -123,7 +162,7 @@ def main():
             index=0
         )
 
-        df_scenario = loader.load_scenario(selected_scenario_name)
+        df_scenario = get_cached_scenario(selected_scenario_name)
         total_steps = len(df_scenario)
 
         st.markdown("---")
@@ -180,7 +219,7 @@ def main():
 
     # Load Model Engine
     try:
-        predictor, shap_explainer, attn_explainer, rollout_sim, port_engine = load_ai_engine()
+        load_ai_engine()
     except Exception as e:
         st.error(f"Error loading AI model: {e}")
         st.info("Ensure artifacts_v2/attention_world_model.pt exists and dependencies are installed.")
@@ -188,19 +227,17 @@ def main():
 
     # Extract current window sequence
     curr_step = st.session_state.step_idx
-    history_features, current_row, gt_future = loader.get_sliding_window(
-        df_scenario, curr_step, seq_len=SEQ_LEN
-    )
-
     history_df = df_scenario.iloc[curr_step - SEQ_LEN:curr_step]
-    current_time_str = str(current_row.get('window', f'Step {curr_step}'))
 
-    # Run AI Inference
-    prediction = predictor.predict(history_features)
-    attribution_df = shap_explainer.explain(history_features, horizon_idx=1, top_k=8)
-    attention_df = attn_explainer.explain(prediction['attention_weights'])
-    rollout_df = rollout_sim.simulate(history_features, k_steps=6)
-    port_transition_data = port_engine.get_port_state_transitions(current_row.to_dict(), prediction, selected_scenario_name)
+    # Compute or fetch cached AI inference diagnostics (shared across sessions)
+    diag = compute_step_diagnostics(selected_scenario_name, curr_step)
+    prediction = diag["prediction"]
+    attribution_df = diag["attribution_df"]
+    attention_df = diag["attention_df"]
+    rollout_df = diag["rollout_df"]
+    port_transition_data = diag["port_transition_data"]
+    current_row = diag["current_row_dict"]
+    current_time_str = diag["current_time_str"]
 
     # 1. Executive Banner
     render_header(
@@ -210,7 +247,7 @@ def main():
     )
 
     # 2. Executive KPI Cards
-    render_metrics(prediction=prediction, current_state=current_row.to_dict())
+    render_metrics(prediction=prediction, current_state=current_row)
 
     st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
@@ -244,7 +281,7 @@ def main():
     st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
 
     # 8. Incident Feed & Automated Response Playbooks
-    render_alert_feed(prediction=prediction, current_state=current_row.to_dict())
+    render_alert_feed(prediction=prediction, current_state=current_row)
 
     # Handle Live Stream Playback progression
     if st.session_state.is_playing:
