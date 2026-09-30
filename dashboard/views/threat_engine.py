@@ -1,0 +1,168 @@
+import time
+import streamlit as st
+import pandas as pd
+
+from src.config import SEQ_LEN, WINDOW_SECONDS
+from dashboard.components import (
+    render_header,
+    render_metrics,
+    render_mitre_matrix,
+    render_port_analysis,
+    render_telemetry_charts,
+    render_rollout_view,
+    render_xai_panel,
+    render_alert_feed
+)
+
+def render_threat_engine(loader, get_cached_scenario, compute_step_diagnostics, load_ai_engine):
+    """
+    Renders the Infiltration Prediction Engine SOC Console.
+    Preserves 100% of the predictive world model features, MITRE matrix,
+    port analytics, counterfactual rollouts, XAI SHAP, and alert playbooks.
+    """
+    scenario_names = loader.get_scenario_names()
+
+    # Sidebar Controls
+    with st.sidebar:
+        st.markdown("## SOC Replay Controller")
+
+        if not scenario_names:
+            st.error("No scenario files found in demo_data! Run python scripts/precompute_scenarios.py first.")
+            st.stop()
+
+        selected_scenario_name = st.selectbox(
+            "Select Attack Scenario",
+            scenario_names,
+            index=0
+        )
+
+        df_scenario = get_cached_scenario(selected_scenario_name)
+        total_steps = len(df_scenario)
+
+        st.markdown("---")
+        st.markdown("### Playback Mode")
+
+        # Initialize session state for playback step
+        if 'step_idx' not in st.session_state:
+            st.session_state.step_idx = SEQ_LEN
+        if 'is_playing' not in st.session_state:
+            st.session_state.is_playing = False
+        if 'current_scenario' not in st.session_state or st.session_state.current_scenario != selected_scenario_name:
+            st.session_state.current_scenario = selected_scenario_name
+            st.session_state.step_idx = SEQ_LEN
+
+        mode = st.radio("Simulation Control", ["Manual Step Slider", "Live Stream Replay"], index=0)
+
+        if mode == "Manual Step Slider":
+            st.session_state.is_playing = False
+            step_idx = st.slider(
+                "Window Index (10s intervals)",
+                min_value=SEQ_LEN,
+                max_value=total_steps,
+                value=st.session_state.step_idx,
+                step=1
+            )
+            st.session_state.step_idx = step_idx
+        else:
+            col_play, col_pause, col_reset = st.columns(3)
+            with col_play:
+                if st.button("Play", use_container_width=True):
+                    st.session_state.is_playing = True
+            with col_pause:
+                if st.button("Pause", use_container_width=True):
+                    st.session_state.is_playing = False
+            with col_reset:
+                if st.button("Reset", use_container_width=True):
+                    st.session_state.step_idx = SEQ_LEN
+                    st.session_state.is_playing = False
+
+            speed = st.select_slider(
+                "Replay Speed (delay per window)",
+                options=[0.5, 1.0, 1.5, 2.0],
+                value=1.0,
+                format_func=lambda x: f"{x}s / window"
+            )
+
+        st.markdown("---")
+        st.markdown("### AI Engine Architecture")
+        st.caption(f"**Model:** PyTorch AttentionWorldModel (Multi-Task)")
+        st.caption(f"**Context Window:** {SEQ_LEN} states ({SEQ_LEN * WINDOW_SECONDS}s history)")
+        st.caption(f"**Direct Horizons:** +10s, +30s, +60s")
+        st.caption(f"**Explainability:** Self-Attention + SHAP Values (ϕ_i)")
+        st.caption(f"**Port Analytics:** Dynamic Flow & State Attribution")
+
+    # Load Model Engine
+    try:
+        load_ai_engine()
+    except Exception as e:
+        st.error(f"Error loading AI model: {e}")
+        st.info("Ensure artifacts_v2/attention_world_model.pt exists and dependencies are installed.")
+        st.stop()
+
+    # Extract current window sequence
+    curr_step = st.session_state.step_idx
+    history_df = df_scenario.iloc[curr_step - SEQ_LEN:curr_step]
+
+    # Compute or fetch cached AI inference diagnostics (shared across sessions)
+    diag = compute_step_diagnostics(selected_scenario_name, curr_step)
+    prediction = diag["prediction"]
+    attribution_df = diag["attribution_df"]
+    attention_df = diag["attention_df"]
+    rollout_df = diag["rollout_df"]
+    port_transition_data = diag["port_transition_data"]
+    current_row = diag["current_row_dict"]
+    current_time_str = diag["current_time_str"]
+
+    # 1. Executive Banner
+    render_header(
+        scenario_name=selected_scenario_name,
+        current_window=current_time_str,
+        threat_level=prediction['threat_level']
+    )
+
+    # 2. Executive KPI Cards
+    render_metrics(prediction=prediction, current_state=current_row)
+
+    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+
+    # 3. MITRE ATT&CK Kill-Chain Matrix & Global State Softmax
+    render_mitre_matrix(
+        predicted_stage=prediction['predicted_stage'],
+        stage_probs=prediction['stage_probabilities'],
+        rollout_df=rollout_df
+    )
+
+    st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
+
+    # 4. Port State-Transition Dynamics & Pipeline
+    render_port_analysis(port_transition_data=port_transition_data)
+
+    st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
+
+    # 5. 60-Second Rollout Trajectory Simulation
+    render_rollout_view(rollout_df=rollout_df)
+
+    st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
+
+    # 6. Real-Time Telemetry Stream
+    render_telemetry_charts(history_df=history_df)
+
+    st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
+
+    # 7. Explainable AI Diagnostics (XAI)
+    render_xai_panel(attention_df=attention_df, attribution_df=attribution_df)
+
+    st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
+
+    # 8. Incident Feed & Automated Response Playbooks
+    render_alert_feed(prediction=prediction, current_state=current_row)
+
+    # Handle Live Stream Playback progression
+    if st.session_state.is_playing:
+        if st.session_state.step_idx < total_steps:
+            time.sleep(speed)
+            st.session_state.step_idx += 1
+            st.rerun()
+        else:
+            st.session_state.is_playing = False
+            st.warning("Reached end of scenario sequence.")
