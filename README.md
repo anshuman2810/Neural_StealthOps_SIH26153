@@ -17,6 +17,38 @@ An enterprise-grade **Deep Learning World Model** for real-time proactive cyber 
 
 ---
 
+## Dataset & Benchmark Telemetry
+
+### Training Data Source: CSE-CIC-IDS2018
+The Attention-LSTM World Model was trained and evaluated on flow records from the official **CSE-CIC-IDS2018** benchmark dataset (Communications Security Establishment & Canadian Institute for Cybersecurity).
+
+The raw processed traffic dataset is publicly hosted on AWS S3 and can be queried or summarized directly without AWS credentials:
+```bash
+aws s3 ls --no-sign-request --summarize --human-readable --recursive "s3://cse-cic-ids2018/Processed Traffic Data for ML Algorithms/"
+```
+
+To download all or individual CSV capture files into the `dataset/` directory:
+```bash
+aws s3 cp --no-sign-request "s3://cse-cic-ids2018/Processed Traffic Data for ML Algorithms/" dataset/ --recursive
+```
+
+### Dataset Files Used for Training & State Modeling
+The following 10 chronological capture files are processed by the chunked 10-second state builder:
+1. `Wednesday-14-02-2018_TrafficForML_CICFlowMeter.csv` *(FTP-BruteForce, SSH-Bruteforce)*
+2. `Thursday-15-02-2018_TrafficForML_CICFlowMeter.csv` *(DoS-GoldenEye, DoS-Slowloris)*
+3. `Friday-16-02-2018_TrafficForML_CICFlowMeter.csv` *(DoS-SlowHTTPTest, DoS-Hulk)*
+4. `Thuesday-20-02-2018_TrafficForML_CICFlowMeter.csv` *(DDoS-LOIC-HTTP, DDoS-HOIC)*
+5. `Wednesday-21-02-2018_TrafficForML_CICFlowMeter.csv` *(DDOS-LOIC-UDP)*
+6. `Thursday-22-02-2018_TrafficForML_CICFlowMeter.csv` *(Brute Force -Web, Brute Force -XSS, SQL Injection)*
+7. `Friday-23-02-2018_TrafficForML_CICFlowMeter.csv` *(Brute Force -Web, Brute Force -XSS, SQL Injection)*
+8. `Wednesday-28-02-2018_TrafficForML_CICFlowMeter.csv` *(Infiltration)*
+9. `Thursday-01-03-2018_TrafficForML_CICFlowMeter.csv` *(Infiltration)*
+10. `Friday-02-03-2018_TrafficForML_CICFlowMeter.csv` *(Botnet C2)*
+
+> **Note:** Downloading the multi-gigabyte raw dataset is **optional**. The repository includes lightweight precomputed scenarios in `demo_data/` and pre-trained model weights in `artifacts_v2/` so the dashboard and evaluation scripts run out-of-the-box immediately after cloning.
+
+---
+
 ## Repository Structure
 
 ```text
@@ -123,4 +155,4 @@ jupyter notebook world_model_forecasting_v2.ipynb
 ---
 
 ## License & Attribution
-Developed for Smart India Hackathon (SIH) 2026 — Problem Statement SIH 26153. Built on CIC-IDS2018 benchmark telemetry.
+Developed for Smart India Hackathon (SIH) 2026 — Problem Statement SIH 26153. Built on CSE-CIC-IDS2018 benchmark telemetry.
