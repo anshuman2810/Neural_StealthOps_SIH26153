@@ -64,8 +64,12 @@ The following 10 chronological capture files are processed by the chunked 10-sec
 │   ├── benchmark_multi_horizon_decay.png  # Multi-horizon durability decay curve
 │   └── benchmark_batch_throughput.png     # Batch throughput scaling chart
 ├── dashboard/
-│   ├── app.py                             # Main Streamlit SOC Dashboard
+│   ├── app.py                             # Main Streamlit Master Controller & Router
 │   ├── web_console.py                     # Standalone API/web runner
+│   ├── views/                             # Multi-dashboard view modules
+│   │   ├── landing_page.py                # DIAT Welcome & Environment Selector
+│   │   ├── threat_engine.py               # Infiltration Prediction Engine SOC Console
+│   │   └── system_management.py           # Infrastructure Health, Telemetry & Management Console
 │   └── components/
 │       ├── header.py                      # Telemetry strip and threat banners
 │       ├── metrics.py                     # Multi-horizon risk probability cards

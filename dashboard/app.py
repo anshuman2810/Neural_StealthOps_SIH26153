@@ -10,7 +10,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.config import SEQ_LEN, WINDOW_SECONDS, ARTIFACTS_DIR
+from src.config import SEQ_LEN, WINDOW_SECONDS
 from src.data.scenario_loader import ScenarioLoader
 from src.models.predictor import NetworkWorldModelPredictor
 from src.explainability.shap_explainer import ShapExplainer
@@ -18,26 +18,21 @@ from src.explainability.attention_explainer import AttentionExplainer
 from src.simulation.rollout import AutoregressiveRolloutSimulator
 from src.simulation.port_engine import PortTelemetryEngine
 
-from dashboard.components import (
-    render_header,
-    render_metrics,
-    render_mitre_matrix,
-    render_port_analysis,
-    render_telemetry_charts,
-    render_rollout_view,
-    render_xai_panel,
-    render_alert_feed
+from dashboard.views import (
+    render_landing_page,
+    render_threat_engine,
+    render_system_management
 )
 
-# Configure Streamlit page with clean title and no emojis
+# Configure Streamlit page
 st.set_page_config(
-    page_title="Predictive World Model — SOC Console",
-    page_icon=None,
+    page_title="NeuralOps — Threat Forecasting & System Management Console",
+    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom high-contrast light enterprise styling
+# Custom high-contrast light enterprise styling & glowing LED animations
 st.markdown(
     """
     <style>
@@ -89,6 +84,69 @@ st.markdown(
         .stCaption {
             color: #475569 !important;
             font-size: 0.85rem !important;
+        }
+
+        /* Pulsing LED animations for Health Indicators */
+        @keyframes pulse-green {
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+                transform: scale(0.95);
+            }
+            70% {
+                box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+                transform: scale(1.05);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+                transform: scale(0.95);
+            }
+        }
+        .blink-dot-green {
+            display: inline-block;
+            width: 11px;
+            height: 11px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+            animation: pulse-green 1.8s infinite;
+        }
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+                transform: scale(0.95);
+            }
+            70% {
+                box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+                transform: scale(1.05);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+                transform: scale(0.95);
+            }
+        }
+        .blink-dot-red {
+            display: inline-block;
+            width: 11px;
+            height: 11px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+            animation: pulse-red 1.5s infinite;
+        }
+
+        /* Top Persistent Navigation Bar */
+        .top-navbar-container {
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 10px 18px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
         }
     </style>
     """,
@@ -144,154 +202,70 @@ def compute_step_diagnostics(scenario_name: str, step_idx: int):
         "current_time_str": current_time_str
     }
 
-def main():
-    loader = ScenarioLoader()
-    scenario_names = loader.get_scenario_names()
+def render_top_navigation():
+    """Renders the persistent top navigation bar allowing quick navigation and switching between views."""
+    current_page = st.session_state.get("current_page", "landing")
+    
+    col_nav_brand, col_nav_btn1, col_nav_btn2, col_nav_btn3 = st.columns([2.5, 1.2, 1.6, 1.6])
 
-    # Sidebar Controls
-    with st.sidebar:
-        st.markdown("## SOC Replay Controller")
-
-        if not scenario_names:
-            st.error("No scenario files found in demo_data! Run python scripts/precompute_scenarios.py first.")
-            st.stop()
-
-        selected_scenario_name = st.selectbox(
-            "Select Attack Scenario",
-            scenario_names,
-            index=0
+    with col_nav_brand:
+        st.markdown(
+            """
+            <div style="display: flex; align-items: center; gap: 10px; height: 100%; padding-top: 4px;">
+                <span style="font-weight: 800; font-size: 1.15rem; color: #0f172a; letter-spacing: -0.3px;">🛡️ Team NeuralOps</span>
+                <span style="background: #e2e8f0; color: #475569; font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; font-weight: 700;">SIH-26153</span>
+                <span style="color: #64748b; font-size: 0.82rem; font-weight: 600;">DIAT Pune</span>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
 
-        df_scenario = get_cached_scenario(selected_scenario_name)
-        total_steps = len(df_scenario)
-
-        st.markdown("---")
-        st.markdown("### Playback Mode")
-
-        # Initialize session state for playback step
-        if 'step_idx' not in st.session_state:
-            st.session_state.step_idx = SEQ_LEN
-        if 'is_playing' not in st.session_state:
-            st.session_state.is_playing = False
-        if 'current_scenario' not in st.session_state or st.session_state.current_scenario != selected_scenario_name:
-            st.session_state.current_scenario = selected_scenario_name
-            st.session_state.step_idx = SEQ_LEN
-
-        mode = st.radio("Simulation Control", ["Manual Step Slider", "Live Stream Replay"], index=0)
-
-        if mode == "Manual Step Slider":
-            st.session_state.is_playing = False
-            step_idx = st.slider(
-                "Window Index (10s intervals)",
-                min_value=SEQ_LEN,
-                max_value=total_steps,
-                value=st.session_state.step_idx,
-                step=1
-            )
-            st.session_state.step_idx = step_idx
-        else:
-            col_play, col_pause, col_reset = st.columns(3)
-            with col_play:
-                if st.button("Play", use_container_width=True):
-                    st.session_state.is_playing = True
-            with col_pause:
-                if st.button("Pause", use_container_width=True):
-                    st.session_state.is_playing = False
-            with col_reset:
-                if st.button("Reset", use_container_width=True):
-                    st.session_state.step_idx = SEQ_LEN
-                    st.session_state.is_playing = False
-
-            speed = st.select_slider(
-                "Replay Speed (delay per window)",
-                options=[0.5, 1.0, 1.5, 2.0],
-                value=1.0,
-                format_func=lambda x: f"{x}s / window"
-            )
-
-        st.markdown("---")
-        st.markdown("### AI Engine Architecture")
-        st.caption(f"**Model:** PyTorch AttentionWorldModel (Multi-Task)")
-        st.caption(f"**Context Window:** {SEQ_LEN} states ({SEQ_LEN * WINDOW_SECONDS}s history)")
-        st.caption(f"**Direct Horizons:** +10s, +30s, +60s")
-        st.caption(f"**Explainability:** Self-Attention + SHAP Values (ϕ_i)")
-        st.caption(f"**Port Analytics:** Dynamic Flow & State Attribution")
-
-    # Load Model Engine
-    try:
-        load_ai_engine()
-    except Exception as e:
-        st.error(f"Error loading AI model: {e}")
-        st.info("Ensure artifacts_v2/attention_world_model.pt exists and dependencies are installed.")
-        st.stop()
-
-    # Extract current window sequence
-    curr_step = st.session_state.step_idx
-    history_df = df_scenario.iloc[curr_step - SEQ_LEN:curr_step]
-
-    # Compute or fetch cached AI inference diagnostics (shared across sessions)
-    diag = compute_step_diagnostics(selected_scenario_name, curr_step)
-    prediction = diag["prediction"]
-    attribution_df = diag["attribution_df"]
-    attention_df = diag["attention_df"]
-    rollout_df = diag["rollout_df"]
-    port_transition_data = diag["port_transition_data"]
-    current_row = diag["current_row_dict"]
-    current_time_str = diag["current_time_str"]
-
-    # 1. Executive Banner
-    render_header(
-        scenario_name=selected_scenario_name,
-        current_window=current_time_str,
-        threat_level=prediction['threat_level']
-    )
-
-    # 2. Executive KPI Cards
-    render_metrics(prediction=prediction, current_state=current_row)
-
-    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
-
-    # 3. MITRE ATT&CK Kill-Chain Matrix & Global State Softmax
-    render_mitre_matrix(
-        predicted_stage=prediction['predicted_stage'],
-        stage_probs=prediction['stage_probabilities'],
-        rollout_df=rollout_df
-    )
-
-    st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
-
-    # 4. Port State-Transition Dynamics & Pipeline
-    render_port_analysis(port_transition_data=port_transition_data)
-
-    st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
-
-    # 5. 60-Second Rollout Trajectory Simulation
-    render_rollout_view(rollout_df=rollout_df)
-
-    st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
-
-    # 6. Real-Time Telemetry Stream
-    render_telemetry_charts(history_df=history_df)
-
-    st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
-
-    # 7. Explainable AI Diagnostics (XAI)
-    render_xai_panel(attention_df=attention_df, attribution_df=attribution_df)
-
-    st.markdown("<div style='height: 18px;'></div>", unsafe_allow_html=True)
-
-    # 8. Incident Feed & Automated Response Playbooks
-    render_alert_feed(prediction=prediction, current_state=current_row)
-
-    # Handle Live Stream Playback progression
-    if st.session_state.is_playing:
-        if st.session_state.step_idx < total_steps:
-            time.sleep(speed)
-            st.session_state.step_idx += 1
+    with col_nav_btn1:
+        if st.button("🏠 Home / Landing", key="nav_home", use_container_width=True):
+            st.session_state.current_page = "landing"
             st.rerun()
-        else:
-            st.session_state.is_playing = False
-            st.warning("Reached end of scenario sequence.")
+
+    with col_nav_btn2:
+        is_threat_active = current_page == "threat_engine"
+        btn_label = "🧠 Threat Engine ●" if is_threat_active else "🧠 Threat Engine"
+        if st.button(btn_label, key="nav_threat", use_container_width=True):
+            st.session_state.current_page = "threat_engine"
+            st.rerun()
+
+    with col_nav_btn3:
+        is_mgmt_active = current_page == "system_management"
+        btn_label = "🖥️ System Health ●" if is_mgmt_active else "🖥️ System Health"
+        if st.button(btn_label, key="nav_mgmt", use_container_width=True):
+            st.session_state.current_page = "system_management"
+            st.rerun()
+
+    st.markdown("<hr style='border: 0.5px solid #cbd5e1; margin: 8px 0 16px 0;'>", unsafe_allow_html=True)
+
+def main():
+    # Initialize session state page routing
+    if "current_page" not in st.session_state:
+        st.session_state.current_page = "landing"
+
+    loader = ScenarioLoader()
+
+    # If inside either dashboard, render the top persistent navigation bar
+    if st.session_state.current_page != "landing":
+        render_top_navigation()
+
+    # Route based on current page
+    if st.session_state.current_page == "landing":
+        render_landing_page()
+
+    elif st.session_state.current_page == "threat_engine":
+        render_threat_engine(
+            loader=loader,
+            get_cached_scenario=get_cached_scenario,
+            compute_step_diagnostics=compute_step_diagnostics,
+            load_ai_engine=load_ai_engine
+        )
+
+    elif st.session_state.current_page == "system_management":
+        render_system_management()
 
 if __name__ == "__main__":
     main()
